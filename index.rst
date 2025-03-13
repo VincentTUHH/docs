@@ -50,6 +50,12 @@ Welcome to HippoCampusDocs's documentation!
    contents/raspberry_pi_setup/usb_configuration
    contents/raspberry_pi_setup/ethernet
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Full UVMS Setup
+
+   contents/full_uvms_setup/first_steps
+
 .. toctree:: 
    :maxdepth: 1
    :caption: Hardware + Work in the Lab
