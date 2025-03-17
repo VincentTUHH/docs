@@ -18,6 +18,7 @@ On the **Raspberry Pi 5**, UART communication is available through multiple hard
 Mandatory Setup Steps
 *********************
 #. Enable UARTs in :file:`config.txt`
+
    * By default, some UARTs are disabled. To enable them:
    .. code-block:: console
 
@@ -36,6 +37,7 @@ Mandatory Setup Steps
 
 
 #. Verify UART Availability
+
    * After rebooting, check the available serial devices:
    .. code-block:: console
 
@@ -53,7 +55,7 @@ Each UART on the Raspberry Pi 5 is mapped to specific GPIO pins and a correspond
 UART KERNELS / HARDWARE ADDRESS Tx/Rx GPIOs          
 ==== ========================== =====================
 0                               :code:`GPIO14/GPIO15`
-1    -                          -                   
+1    --                         --                   
 2    :code:`fe201400.serial`    :code:`GPIO0/GPIO1`  
 3    :code:`fe201600.serial`    :code:`GPIO4/GPIO5`  
 4    :code:`fe201800.serial`    :code:`GPIO8/GPIO9`  
@@ -61,18 +63,20 @@ UART KERNELS / HARDWARE ADDRESS Tx/Rx GPIOs
 ==== ========================== =====================
 
 
-The Linux kernal then creates a device entry :code:`/dev/ttyAMA*`for every active UART.
-Those device entries are the serial device names that programs use to send and receive data. However, the specific :code:`/dev/ttyAMA*`` assignment may change across reboots and if multiple UARTs are acitavted, leading to inconsistencies.
+The Linux kernal then creates a device entry :code:`/dev/ttyAMA*` for every active UART.
+Those device entries are the serial device names that programs use to send and receive data. However, the specific :code:`/dev/ttyAMA*` assignment may change across reboots and if multiple UARTs are acitavted, leading to inconsistencies.
 
-To avoid this issue, we define a fixed device name using a udev rule. This ensures that the UART is always accessible under a predictable name, regardless of how :code:`/dev/ttyAMA*`` numbers are assigned.
+To avoid this issue, we define a fixed device name using a udev rule. This ensures that the UART is always accessible under a predictable name, regardless of how :code:`/dev/ttyAMA*` numbers are assigned.
 
 #. Wiring Guidelines
+
    * TX and RX are defined **from the perspective of the Raspberry Pi**. Example for **UART5**:
       * **TX (GPIO12)** → Connect to **RX of the external device**
       * **RX (GPIO13)** → Connect to **TX of the external device**
       * **GND** must also be connected between devices.
 
 #. Check if the Connection is Working
+
    * To check if a device is connected and sending data:
    .. code-block:: console
 
@@ -87,40 +91,49 @@ To avoid this issue, we define a fixed device name using a udev rule. This ensur
    * If "Hello" is displayed, UART is working correctly.
 
 #. Set Up Persistent Device Naming
-The udev system dynamically manages device nodes in Linux. By default, it applies standard rules that determine permissions, naming, and symbolic links for connected devices. Custom udev rules allow assigning consistent names to devices, ensuring that :code:`/dev/ttyAMA*`` numbers remain predictable across reboots, as device names like :code:`/dev/ttyAMA2` may change on reboot. To assign a persistent name:
+
+   The **udev** system dynamically manages device nodes in Linux. By default, it applies standard rules that determine permissions, naming, and symbolic links for connected devices. Custom udev rules allow assigning consistent names to devices, ensuring that :code:`/dev/ttyAMA*` numbers remain predictable across reboots, as device names like :code:`/dev/ttyAMA2` may change on reboot. Namin the rule's file is important as higher-numbered rules (e.g., 99-custom.rules) are applied last, overriding lower-numbered default rules. To assign a persistent name:
+
    #. Create a new udev rule:
-   .. code-block:: console
 
-      sudo nano /etc/udev/rules.d/50-serial.rules
+      .. code-block:: console
+
+         sudo nano /etc/udev/rules.d/99-serial.rules
    #. For the :code:`main` paste:
-   .. code-block:: console
 
-      KERNEL=="ttyAMA[0-9]*", GROUP="dialout", ENV{SERIAL_MARKER}="serial_marker"
+      .. code-block:: sh
 
-      # uart2
-      ENV{SERIAL_MARKER}=="serial_marker",  SUBSYSTEM=="tty", KERNELS=="fe201400.serial", SYMLINK+="teensy_data"
-      # uart4
-      ENV{SERIAL_MARKER}=="serial_marker",  SUBSYSTEM=="tty", KERNELS=="fe201800.serial", SYMLINK+="fcu_debug"
-      # uart5
-      ENV{SERIAL_MARKER}=="serial_marker",  SUBSYSTEM=="tty", KERNELS=="fe201a00.serial", SYMLINK+="fcu_data"
+         KERNEL=="ttyAMA[0-9]*", GROUP="dialout", ENV{SERIAL_MARKER}="serial_marker"
+
+         # uart2
+         ENV{SERIAL_MARKER}=="serial_marker",  SUBSYSTEM=="tty", KERNELS=="fe201400.serial", SYMLINK+="teensy_data"
+         # uart4
+         ENV{SERIAL_MARKER}=="serial_marker",  SUBSYSTEM=="tty", KERNELS=="fe201800.serial", SYMLINK+="fcu_debug"
+         # uart5
+         ENV{SERIAL_MARKER}=="serial_marker",  SUBSYSTEM=="tty", KERNELS=="fe201a00.serial", SYMLINK+="fcu_data"
 
    #. Apply the new rule:
-   .. code-block:: console
 
-      sudo udevadm control --reload-rules && sudo udevadm trigger
-   * From now on, use :code:`/dev/fcu_data` and all the other device addresses for a stable reference.
+      .. code-block:: console
+
+         sudo udevadm control --reload-rules && sudo udevadm trigger
+
+      * From now on, use :code:`/dev/fcu_data` and all the other device addresses for a stable reference.
+
    #. Check rules applied:
-   .. code-block:: console
 
-      ls /dev/fcu* -l
-      ls /dev/teensy* -l
+      .. code-block:: console
 
-   The output should show symbolic links for the serial devices:
-   .. code-block:: console
+         ls /dev/fcu* -l
+         ls /dev/teensy* -l
 
-      lrwxrwxrwx 1 root root 7 Dec 11 14:57 /dev/fcu_debug -> ttyAMA1
-      lrwxrwxrwx 1 root root 7 Dec 11 14:57 /dev/fcu_tele -> ttyAMA2
-      lrwxrwxrwx 1 root root 7 Dec 11 14:57 /dev/fteensy_data -> ttyAMA3
+      The output should show symbolic links for the serial devices:
+
+      .. code-block:: console
+
+         lrwxrwxrwx 1 root root 7 Dec 11 14:57 /dev/fcu_debug -> ttyAMA1
+         lrwxrwxrwx 1 root root 7 Dec 11 14:57 /dev/fcu_tele -> ttyAMA2
+         lrwxrwxrwx 1 root root 7 Dec 11 14:57 /dev/teensy_data -> ttyAMA3
    
    A udev rule consists of several components:
 
@@ -139,7 +152,152 @@ The udev system dynamically manages device nodes in Linux. By default, it applie
 
 USB Configuartion Guide
 =======================
-As for UART, we can also set udev rules for USB connections. We use that for the Reach Alpha Arm, where a serial (RS232) to USB adapter is used.
+As for UART, we can also set udev rules for USB connections. We use that for the Reach Alpha Arm, where a serial (RS232) to USB adapter is used. We want to ensure the Reach Alpha 5 Arm always appears as the same device, no matter which USB port we use. For that we must define a rule including the manipulator's **serial number (:code:`ATTRS{serial}`)**. This number is unique to the device itself, not the ports on the raspberry pi. 
+
+ #. Identify the device:
+   .. code-block:: console
+
+      ls /dev/ttyUSB* /dev/ttyACM*
+
+   Depending on the raspberry pi's architecture, USB devices either appear as :code:`USB*` or :code:`ACM*`. Say the manipulator appears as :code:`/dev/ttyUSB0` get more information with:
+
+   .. code-block:: console
+
+      udevadm info -a -n /dev/ttyUSB0 | grep -E "idVendor|idProduct|serial"
+
+   **Note**: change device identifier to the device you reveived.
+
+   In the output look for **serial** number, vendor ID (**idVendor**), and product ID (**idProduct**) in the output. Example:
+
+   .. code-block:: console
+
+      ATTRS{idVendor}=="2341"
+      ATTRS{idProduct}=="0042"
+      ATTRS{serial}=="A1B2C3D4"
+
+   #. Create new udev rule:
+
+      Open a new rule file:
+
+      .. code-block:: console
+
+         sudo nano /etc/udev/rules.d/99-reach-alpha.rules
+      
+      Add the following line, but **REPLACE** idVendor, idProduct, and serial with your actual values:
+
+      .. code-block:: sh
+
+         SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="A1B2C3D4", SYMLINK+="reach_alpha", MODE="0666"
+
+      :code:`Mode="0666"` grant read and write access to all users without the need for sudo.
+
+      Whenever the Reach Alpha 5 Arm is connected, it now appears as :code:`/dev/reach_alpha`. The real USB device (:code:`/dev/ttyUSB0` or :code:`/dev/ttyACM0`) remains unchanged, but :code:`/dev/reach_alpha` will always point to it.
+
+   #. Apply the rules:
+
+      Reload and trigger the new rule:
+
+      .. code-block:: console
+
+         sudo udevadm control --reload-rules && sudo udevadm trigger
+      Check rules applied:
+
+      .. code-block:: console
+
+         ls -l /dev/reach_alpha
+
+      The output should show symbolic links for the serial devices like:
+
+      .. code-block:: console
+
+         lrwxrwxrwx 1 root root 7 Mar 14 12:00 /dev/reach_alpha -> ttyUSB0
+
+      From now on use :code:`/dev/reach_alpha` in any program to read and write to the manipulator.
+
+Do the same for the **FCU (PixHawk 6C)** which is also connected via USB. If you have more than one device connectde via USB it helps to unplug all but one device to correctly identify the **serial** number, vendor ID (**idVendor**), and product ID (**idProduct**).
+
+Create the file:
+
+.. code-block:: console
+
+   sudo nano /etc/udev/rules.d/99-fcu.rules
+
+and add the follwoing line with according changes to idVendor, idProduct, and serial:
+
+.. code-block:: sh
+
+   SUBSYSTEM=="tty", ATTRS{idVendor}=="1d6b", ATTRS{idProduct}=="0002", ATTRS{serial}=="A1B2C3D4", SYMLINK+="fcu_usb", MODE="0666"
+
+Don't forget to apply the rules and to check them:
+
+.. code-block:: console
+
+   sudo udevadm control --reload-rules && sudo udevadm trigger && \
+   ls -l /dev/fcu_sub
+
+Note: The idVendor is a 16-bit identifier assigned to a manufacturer by the USB Implementers Forum, while the idProduct is a 16-bit identifier assigned by the manufacturer to distinguish different models. The serial number is a unique identifier for each individual device, ensuring that even if multiple devices share the same vendor and product ID, they can still be distinguished. In udev rules, using only idVendor and idProduct applies to all matching devices, whereas including the serial ensures that only a specific device is recognized, preventing mix-ups.
+
+
+00-teensy.rules on klopsi-main-00
+=================================
+
+The file reads:
+
+.. code-block:: sh
+
+   ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04*", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_PORT_IGNORE}="1"
+   ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04[789a]*", ENV{MTP_NO_PROBE}="1"
+   KERNEL=="ttyACM*", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04*", MODE:="0666", RUN:="/bin/stty -F /dev/%k raw -echo"
+   KERNEL=="hidraw*", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04*", MODE:="0666"
+   SUBSYSTEMS=="usb", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04*", MODE:="0666"
+   KERNEL=="hidraw*", ATTRS{idVendor}=="1fc9", ATTRS{idProduct}=="013*", MODE:="0666"
+   SUBSYSTEMS=="usb", ATTRS{idVendor}=="1fc9", ATTRS{idProduct}=="013*", MODE:="0666"
+
+
+* **KERNEL=="hidraw*"**: (USB) HID devices. Those are Human Intercae Devices, like mice or keyboard, that allow for human interaction with the computer
+
+* **KERNEL=="ttyACM*"**: serial devices that are connected via USB.
+
+* **ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04*", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_PORT_IGNORE}="1"**: ModemManager (ID_MM_DEVICE_IGNORE) is a Linux service that manages mobile broadband modems (e.g., 3G/4G LTE USB sticks). When a new USB device is detected, ModemManager probes it to see if it is a modem. Some USB serial devices (like microcontrollers, including the Teensy) can be mistaken for modems, causing unwanted interference (e.g., delays, unexpected disconnections). If ModemManager tries to probe the Teensy, it may lock the port, making it inaccessible or causing connection issues. We want to prohibt this by ensuring the ModemManager ignores the teensy.
+
+* **ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04[789a]*", ENV{MTP_NO_PROBE}="1"**: MTP (Media Transfer Protocol) (MTP_NO_PROBE) is a protocol used to transfer media files between devices (e.g., Android phones and Windows/Linux). Some microcontrollers that present USB storage or serial communication might be incorrectly detected as an MTP device. This rule tells the system not to attempt MTP probing on specific Teensy devices.
+
+
+
+KERNEL=="ttyACM*", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="04*", MODE:="0666", RUN:="/bin/stty -F /dev/%k raw -echo"
+
+What is this telling. Also why are they using kernal here and not just subsystem? What is the meaning behind it?
+
+
+
+
+
+Teensy Baudrate
+===============
+The baud rate refers to the speed of serial communication, measured in bits per second (bps). It determines how fast data is transmitted between the Raspberry Pi and the Teensy microcontroller over the UART interface. Both the Raspberry Pi and Teensy must use the same baud rate; otherwise, communication will be unreliable or fail completely. For example, if the Teensy is configured to transmit at 115200 bps but the Raspberry Pi expects 9600 bps, the received data will be garbled or lost.
+
+
+**TO-DO** What are the steps to verify same baud rate
+
+#. raspberry pi side:
+
+   Check current baud rate on the UART that teensy uses (replace device accordingly. When udev rules active from above it should be :code:`/dev/teensy_data`)
+
+   .. code-block:: console
+
+      stty -F /dev/teensy_data
+
+   Look for the line:
+
+   .. code-block:: console
+
+      speed 115200 baud; line = 0;
+   
+   Change baud rate in python file if it doesn't match the teensy baud rate???
+
+#. teensy side:
+
+   **TO-DO**
 
 
 
@@ -147,18 +305,192 @@ As for UART, we can also set udev rules for USB connections. We use that for the
 
 
 
+:code:`/boot/firmware/config.txt`
+=================================
+
+Apart from the things I add (only those uart, that I also use):
+
+.. code-block:: sh
+
+   dtoverlay=i2c4,pins_6_7
+   dtoverlay=uart2
+   dtoverlay=uart3
+   dtoverlay=uart4
+   dtoverlay=uart5
+
+The difference to the default, that is on the old pi is:
+
+.. code-block:: sh
+
+   # dtparam=spi=on
+
+   dtoverlay=gpio-led,gpio=11,label=led11-heartbeat,trigger=heartbeat
+
+
+The new default file additionally has these lines:
+
+.. code-block:: sh
+
+   # Enable KMS ("full" KMS) graphics overlay, leavinf GPU memory as the 
+   # default (the kernal is in control of graphics memory with ful KMS)
+   dtoverlay=vc4-kms-v3d
+   disbale_fw_kmms_setup=1
+
+And the order is slightly different.
 
 
 
 
 
+We will make some chnages to the Raspberry Pi's hardware configurations. It will have immediate impact on the usage of the pins we see in the pinout. For that we will open the respected :code:`config.txt` file:
+
+.. code-block:: console
+
+   sudo nano /boot/firmware/config.txt
+
+#. Deactivate Serial Peripheral Interface (SPI) as we don't use SPI devices. Commennt out in the default :code:`config.tet`:
+
+   .. code-block:: sh
+
+      # dtparam=spi=on
+
+#. Add to the end of the file:
+
+   .. code-block:: sh
+
+      dtoverlay=gpio-led,gpio=11,label=led11-heartbeat,trigger=heartbeat
+
+   This line enables a device tree overlay that configures :code:`GPIO pin 11` as an LED controlled by the Linux system. The :code:`trigger=heartbeat` setting means that the LED will blink to indicate system activity (like a heartbeat). This setup is used for status indication. Once the Raspberry Pi boots, it will automatically start blinking the LED according to the system heartbeat.
+
+   **Note**: TO-DO: how is the LED cuircuit looking, also according to the pinout.
+
+#. Activate all UART's that vill be used as serial connection, by adding:
+
+   .. code-block:: sh
+
+      dtoverlay=uart2
+
+   The default :code::`uart0` is active by default.
+
+#. Add additional I2C bus 4 (I2C4) and assign it to :code:`GPIO 6` (pin 31) (SDA) and :code:`GPIO 7` (pin 7) (SCL). It then appears as :code:`/dev/i2c-4`. (SDA = data line, SCL = clock line):
+
+   .. code-block:: sh
+
+      dtoverlay=i2c4,pins_6_7
+
+   By default, when :code:`dtparam=i2c_arm=on`, :code:`GPIO 2` (SDA) and :code:`GPIO 3` (SCL) are used. It appears as :code:`/dev/i2c-1`
+
+   In additioin to the SDA and SCL pins, the I2C device must also be connected to any :code:`GND` pin (9, 14, 20, 25, 30, 34, 39) and voltage supply, meaning :code:`VCC (3.5V/5V)` on either pin 1, 17 or 2, 4.
+
+#. Enable hardware PWM on specific GPIO (here: GPIO 20 and 21), by adding:
+
+   .. code-block:: sh
+
+      dtoverlay=pwm,pin=20,func=4
+      dtoverlay=pwm,pin=21,func=4
+
+   :code:`func=4` assigns the correct alternate function for PWM. Next to the PWM in the PWM devices (servo motor or LED) must also be connected to other pins as well for power supply (**TO-DO**: figure out how servo and headlights are connected for power)
+
+   Must be :code:`GPIO 20` for front camera tilt and :code:`GPIO 21` for headlight brightness, as defined in hippocampus hardware package in camera_servo_node and spotlight_node `hardware GITHUB <https://github.com/HippoCampusRobotics/hardware.git/>`_
+
+   Check for pwm availability:
+
+   .. code-block:: console
+
+      ls /sys/class/pwm/
+
+In the end always rebbot the system to apply changes:
+
+.. code-block:: console
+
+   sudo reboot
+
+
+
+PWM Devices 
+===========
+
+The servo motor to control the camera angle or the brightnes to control the headlights requires a PWM signal. Apart from that they also require power supply.
+
+After enabling PWM in the :code:`config.txt` the PWM signals are controlled through a special system file.
+
+:code:`camera_servo_node` operates the PWM with the pigpiod library, that allows for precise hardware PWM control, even on GPIO pins that don't normally spuuport hardware PWM.
+
+Make sure the pigpio deamon is running:
+
+.. code-block:: console
+
+   sudo systemctl status pigpiod
+
+If not running, enable it permanently at boot with
+
+.. code-block:: console
+
+   sudo systemctl enable pigpiod
+
+Or if you get 
+
+..code-block:: console
+
+   Unit pigpiod.service could not be found.
+
+check with 
+
+.. code-block:: console
+
+   which pigpiod
+
+if it the deamon is even installed. If not install :code:`pigpiod`:
+
+.. code-block:: console
+
+   sudo apt update
+   sudo apt install -y pigpio
+
+All above is not working. I somehow have to activate the pigpio deamon. On the current robot, the deamon is located and running in: 
+
+❯ which pigpiod       
+/usr/local/bin/pigpiod
+
+ChatGPT says to permanently start pigpio at boot:
+
+sudo systemctl enable pigpio
+
+
+
+If the deamon were running:
+
+❯ sudo systemctl status pigpiod
+● pigpiod.service - Pigpio daemon
+     Loaded: loaded (/etc/systemd/system/pigpiod.service; enabled; vendor preset: enabled)
+     Active: active (running) since Mon 2025-03-17 12:06:18 CET; 5h 47min ago
+   Main PID: 683 (pigpiod)
+      Tasks: 4 (limit: 9244)
+     Memory: 772.0K
+        CPU: 26min 50.676s
+     CGroup: /system.slice/pigpiod.service
+             └─683 /usr/local/bin/pigpiod
+
+Mar 17 12:06:18 klopsi-main-00 systemd[1]: Starting Pigpio daemon...
+Mar 17 12:06:18 klopsi-main-00 systemd[1]: Started Pigpio daemon.
 
 
 
 
 
+Code example in python how to use it:
 
+.. code-block:: sh
 
+   import pigpio
+
+   servo_pin = 20  # GPIO 20 (Pin 38)
+
+   pi = pigpio.pi()  # Connect to the pigpio daemon
+   pi.set_mode(servo_pin, pigpio.OUTPUT)
+
+   # Servo expects pulses between ~500µs (left) and ~2500µs (right), with ~1500µs as center
+   pi.set_servo_pulsewidth(servo_pin, 1500)  # Neutral position
 
 
 
@@ -181,6 +513,29 @@ Since only two wires are supported a connection of 100Mbit/s is possible only. T
 
 behind ... in that file. Thus the check if that gloabl variable exists is performed first before setting it (Is that right?)
 
+Power Supply 
+============
+Pin 4 (5V) and pin 6 (GND) are reserved for the external power supply, which is provided by the 4 cell LiIon battery. As the battery voltage is too high and varies over time a SBEC is connected in between. It takes the battery volate as input and outputs 5A with 5V or 6V. The position of the 2-pin jumper on the output side of the SBEC determines the output voltage, which must be 5V.
+
+Camera
+======
+
+The top-own camera in the bottom tube has 4 wires which are connected to a USB port. This connection provides both power to the camera and data transmission. The raspberry pi's USV ports supply 5V power to connected devices.
+
+Camera devices should be detected as:
+
+.. code-block:: console
+
+   ls /dev/video*
+
+The hardware setup of the camera is done, once it is connected via USB and is recognized by it. To process the image data, use the above device name in a program.
+
+
+External Sensors 
+================
+
+The barometer has 4 wires: two for power supply and two for data transmission via I2C. Those four must be connected accordingly to a any 3.3V (or 5V depending on sensor) pin, any GND pin, and an active I2C port (SDA + SCL)
+
 
 Buddy Overview
 ==============
@@ -190,3 +545,15 @@ The buddy solely has the ReachAlpha 5 Arm connected. It might be of interest to 
 Main Overview
 =============
 The barometer, Pixhawk 6c (FCU with Px4), teensy are all connected to the main. With the hardare setup they should be running by themself by just connecting those to the correct pins. Just make sure the pins are configured right (eq. UART).
+
+
+TO-DO
+=====
+
+Visualization laucnh to start the april tag localization, was brauche ich dafür 
+
+ and barmoter data for processing the USB data, wie 
+
+ Ich will gucken, wie die Sachen connected sind, ob ich noch raspberry pi einstellungen machen muss und wie ich die Daten zu den nodes bekomme, ob ich da wie bei PWM einfach nur eine library brauche, die das für mich macht, oder ob ich wie beim reach alpha arm eine serial connection mit serial(/dev/fcu_debug) oder so herstellen muss. Oder ob irgendwas anderes an einstellungen noch nötig ist???
+
+ chnage, that i dont always have to type in sudo password 

@@ -97,88 +97,8 @@ Der check mit turtle sim bringt hier nichts, weil ich keine graphic user interfa
 Next: Pre build packages!!!!
 
 
-Reach Alpha 5 Arm
-******************
-serial-to-USB adapter, then just connecting it via USB to the Raspberry Pi should be enough to establish communication. The Raspberry Pi will automatically recognize it as a serial device.
-
-If only one USB-to-serial device is connected, it will usually be /dev/ttyUSB0.
 
 
-UART
-****
-
-UART is an asynchronous serial communication protocol, meaning that it takes bytes of data and transmits the individual bits in a sequential fashion.
-Asynchronous transmission allows data to be transmitted without the sender having to send a clock signal to the receiver. Instead, the sender and receiver agree on timing parameters in advance and special bits called 'start bits' are added to each word and used to synchronize the sending and receiving units.
-On a Raspberry Pi conveniently controlled over GPIO's (General Purpose Input/Output)
-
-UART is very simple and only uses two wires between transmitter and receiver to transmit and receive in both directions.
-
-UARTs (Universal Asynchronous Receiver-Transmitters) are serial communication interfaces. The Raspberry Pi has multiple UARTs, each mapped to specific GPIO pins. The UART number (e.g., UART2, UART3, etc.) is significant because it determines:
-	1.	Which GPIO pins are used for Tx (Transmit) and Rx (Receive).
-	2.	How the Linux kernel identifies the UART device (e.g., /dev/serial1).
-
-Each UART corresponds to specific GPIO pins.
-	•	UART0 → Primary UART, but often assigned to Bluetooth on some Raspberry Pi models.
-	•	UART1 → Mini UART (not full-featured, clock-dependent).
-	•	UART2 - UART5 → Secondary hardware UARTs, mapped to specific GPIO pins.
-
-The Linux kernel assigns different device names based on the UART number. UART5 will show up as something like /dev/ttyAMA2, /dev/serial2, etc.
-
-For UARTs, the kernel (kernel is the core of the operating system that directly interacts with the hardware) assigns device names (e.g., /dev/serial0, /dev/ttyAMA0, etc.), so software can communicate with them.
-
-TX and RX are always defined from the perspective of the Raspberry Pi. For example, if the guide says “UART5 TX is on GPIO12,” that means:
-- GPIO12 on the Raspberry Pi sends data (TX).
-- GPIO13 on the Raspberry Pi receives data (RX).
-So if you connect a PX4, you must:
-- Connect Pi’s TX (GPIO12) to PX4’s RX.
-- Connect Pi’s RX (GPIO13) to PX4’s TX.
-
-Yes, the Raspberry Pi’s UARTs are generally mapped to fixed GPIO pins unless changed in the device tree overlay (dtoverlay in config.txt).
-
-fe201400.serial refers to the hardware address of UART2. These addresses tell the kernel where each UART physically exists in the Pi’s memory. When you enable dtoverlay=uart5, the kernel knows that UART5 corresponds to fe201a00.serial and assigns a device like /dev/ttyAMA2. /dev/serial0, /dev/serial1 → Aliases that point to actual UART devices.
-
-1.	UARTs Must Be Enabled First
- - By default, some UARTs on the Raspberry Pi are disabled to free up GPIOs for other functions.
- - You must enable UARTs in /boot/firmware/config.txt using:
- - dtoverlay=uart5
- - This tells the Linux kernel to activate UART5.
-2.	Once Enabled, the Kernel Recognizes the UART
- - After rebooting, the kernel will now list the active UART as a device.
- - You can check which UARTs are available by running:
- - ls -l /dev/serial*
- - If UART5 is enabled, you should see a device like: /dev/ttyAMA1 -> fe201a00.serial
- - This confirms that UART5 (physically mapped to fe201a00.serial) is now accessible via /dev/ttyAMA1.
-3. If you physically connect a device (like PX4) to GPIO12 (TX) and GPIO13 (RX) on the Raspberry Pi, it will receive data on /dev/ttyAMA1.
-4. Any program (Python, C++, ROS 2 nodes, etc.) can open /dev/ttyAMA1 to send/receive data.
-5. If dtoverlay=uart5 is missing or disabled in config.txt, /dev/ttyAMA1 won’t exist, and no program can use it.
-6. The presence of /dev/ttyAMA1 does not mean something is connected. It only means that the UART5 hardware is available for use.
-7. How to Check if a Device is Connected?: cat /dev/ttyAMA1
-8. Loopback Test (Check if UART is Working Without a Device)
- - If you want to test without another device, you can connect TX and RX together (GPIO12 to GPIO13 for UART5):
- - run: 
-   echo "Hello" > /dev/ttyAMA1
-   cat /dev/ttyAMA1
- - If it prints “Hello,” the UART is working.
-
-
-Understanding the UART Rule (/etc/udev/rules.d/50-serial.rules)
-***************************************************************
-This section in the tutorial configures udev rules, which:
-- Assign user permissions (GROUP="dialout").
-- Create symlinks (e.g., /dev/fcu_data instead of /dev/ttyAMA1).
-- Ensure that UART devices always have the same consistent names.
-- Instead of referring to UART5 as /dev/ttyAMA1, it will be accessible as /dev/fcu_data.
-- This avoids issues where device names (e.g., /dev/ttyAMA1) might change across reboots.
-- Programs can use /dev/fcu_data or /dev/fcu_debug instead of /dev/ttyAMA*. (especially as the number of ttyAMA* changes depending on how many UART's are active and is not linked to the number of the UART)
-- Verify everything works: ls -l /dev/fcu_* (must see all symlinks)
-
-udev does more than just create symlinks for UART devices. It is a device manager for the Linux kernel that handles hardware detection, naming, and access permissions dynamically. 
-
-GROUP="dialout" in your rules allows non-root users to access serial ports.
-
-Triggers Scripts or Commands When a Device is Detected
-- You can configure udev to run a script automatically when a device is plugged in.
-- Example: If PX4 is connected via UART5, udev could start a logging service.
 
 GPIO pin / pinout on Raspberry Pi
 *********************************
@@ -246,9 +166,7 @@ Run: ls /sys/class/pwm/. If it shows something like pwmchip0, then PWM is enable
 Add this line at the bottom: dtoverlay=pwm-2chan
 Then save (CTRL+X, Y, Enter) and reboot: sudo reboot
 
-Teensy Baudrate
-***************
-The baud rate refers to the speed of serial communication, measured in bits per second (bps). It determines how fast data is transmitted between the Raspberry Pi and the Teensy microcontroller over the UART interface. Both the Raspberry Pi and Teensy must use the same baud rate; otherwise, communication will be unreliable or fail completely. For example, if the Teensy is configured to transmit at 115200 bps but the Raspberry Pi expects 9600 bps, the received data will be garbled or lost.
+
 
 
 
