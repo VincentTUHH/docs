@@ -308,10 +308,11 @@ The baud rate refers to the speed of serial communication, measured in bits per 
 :code:`/boot/firmware/config.txt`
 =================================
 
-Apart from the things I add (only those uart, that I also use):
+Apart from the things I add (only those uart, that I also use), **must add it under the [all] section:
 
 .. code-block:: sh
-
+   [all]
+   ...
    dtoverlay=i2c4,pins_6_7
    dtoverlay=uart2
    dtoverlay=uart3
@@ -325,6 +326,7 @@ The difference to the default, that is on the old pi is:
    # dtparam=spi=on
 
    dtoverlay=gpio-led,gpio=11,label=led11-heartbeat,trigger=heartbeat
+   # must also be under [all]
 
 
 The new default file additionally has these lines:
@@ -416,45 +418,147 @@ After enabling PWM in the :code:`config.txt` the PWM signals are controlled thro
 
 :code:`camera_servo_node` operates the PWM with the pigpiod library, that allows for precise hardware PWM control, even on GPIO pins that don't normally spuuport hardware PWM.
 
+pigpio is NOT pre-installed on Ubuntu (only on Raspbian = Raspberry Pi OS, the default operating system for Raspberry Pi). Hence, the pigpio package is often times missing from standard repositories in Ubuntu and must be manually installed, as well as pigpiod (the daemon of pigpio) must be enabled.
+
+Beides mal ausprobieren, so wie ChatGPT:
+
+.. code-block:: console
+
+   cd && \
+   git clone https://github.com/joan2937/pigpio.git && \
+   cd pigpio && \
+   make && \
+   sudo make install
+
+.. code-block:: console
+
+   sudo apt update && \
+   sudo apt install unzip
+
+or as in Hippo docs:
+
+.. code-block::console
+
+   wget https://github.com/joan2937/pigpio/archive/master.zip && \
+   sudo apt update && \
+   sudo apt install unzip && \
+   unzip master.zip && \
+   sudo rm master.zip && \
+   cd pigpio-master && \
+   make && \
+   sudo make install
+
+Then create a :code:`pigpiod.service` file at :code:`/etc/systemd/system`:
+
+.. code-block:: console
+
+   sudo nano /etc/systemd/system/pigpiod.service
+
+.. code-block:: sh
+
+   [Unit]
+   Description=Pigpio daemon
+
+   [Service]
+   Type=forking
+   PIDFile=pigpio.pid
+   ExecStart=/usr/local/bin/pigpiod
+
+   [Install]
+   WantedBy=multi-user.target
+
+Hit Strg-0, Enter Strg-X to save and return to console.
+
+The enable the system permanently to run at boot:
+
+.. code-block:: console
+
+   sudo systemctl enable pigpiod.service
+
+And run it for the first time:
+
+.. code-block:: console
+
+   sudo systemctl start pigpiod.service
+
+
+
 Make sure the pigpio deamon is running:
 
 .. code-block:: console
 
    sudo systemctl status pigpiod
 
-If not running, enable it permanently at boot with
+
+needrestart.conf 
+================
+needrestart, a tool used on Linux systems to check whether services need to be restarted after package updates.
+
+Open the file:
 
 .. code-block:: console
 
-   sudo systemctl enable pigpiod
+   sudo nano /etc/needrestart/needrestart.conf
 
-Or if you get 
+Uncomment and modify the following two lines in that file.
 
-..code-block:: console
+enables automatic service restarts after package updates:
 
-   Unit pigpiod.service could not be found.
+.. code-block:: sh
 
-check with 
+   $nrconf{restart} = 'a';
+
+disables kernel hints, meaning needrestart will not notify you if a system reboot is required due to a kernel update
+
+.. code-block:: sh
+
+   $nrconf{kernelhints} = 0;
+
+Apply changes:
 
 .. code-block:: console
 
-   which pigpiod
+   sudo systemctl restart needrestart
+   
 
-if it the deamon is even installed. If not install :code:`pigpiod`:
 
-.. code-block:: console
 
-   sudo apt update
-   sudo apt install -y pigpio
+systemd service file 
+====================
 
-All above is not working. I somehow have to activate the pigpio deamon. On the current robot, the deamon is located and running in: 
 
-❯ which pigpiod       
-/usr/local/bin/pigpiod
+You cannot name the sections arbitrarily in systemd service files. Systemd only recognizes specific predefined section names. If you use an invalid section name, systemd will ignore it or produce an error.
 
-ChatGPT says to permanently start pigpio at boot:
+systemd service file:
+========= ===================================================================
+SECTION   PURPOSE          
+========= ===================================================================
+[Unit]    Defines metadata, description, and dependencies.      
+[Service] Specifies how the service starts, stops, and runs.   
+[Install] Controls when and how the service is enabled (e.g., start at boot).   
+[Socket]  Used when defining socket-based activation (optional). 
+[Timer]   Used for timed execution of services (optional). 
+[Path]    Used for path-based activation (optional).
+========= ===================================================================
 
-sudo systemctl enable pigpio
+
+/boot/firmware/config.txt
+=========================
+
+boot config.txt file. [] sections control which settings apply to which hardware
+======= ===================================================================
+SECTION   PURPOSE          
+======= ===================================================================
+[all]   Runs on all Raspberry Pi models. 
+[pi4]   Only applies to Raspberry Pi 4 (or Pi 5 if not using [pi5]).
+[pi5]   Only applies to Raspberry Pi 5.
+[cm4]   Only applies to the Compute Module 4 (CM4).
+======= ===================================================================
+If a setting appears in [pi5], it overrides conflicting [all] settings on a Pi 5.
+Since I am solely using this config.txt for this specific Pi 5, I can put everything under under [all] or [pi5] — both will work for your Raspberry Pi 5.
+**Einmal gucken, was unter Pi 4 oder cm4 war, ob das relevant ist?!**
+
+
 
 
 
@@ -528,7 +632,104 @@ Camera devices should be detected as:
 
    ls /dev/video*
 
+The first detected camera always appears as :code:`/dev/video0` and the second as :code:`/dev/video1`. As the main pi is only connected to the front camera and the buddy pi only to the vertical camera, both will appear on their respected pi as :code:`/dev/video0`. Hence this device name is hard coded in the launch file, that start the mjpeg_cam_node (see below).
+
 The hardware setup of the camera is done, once it is connected via USB and is recognized by it. To process the image data, use the above device name in a program.
+
+
+v4l2 
+****
+
+Video capturing, processing and noticing video devices, eg :code:`/dev/video0` is done by the Video4Linux (v4l2) subsystem, which is native for Ubuntu 24.04. and built into the kernal. Without it
+
+.. code-block:: console
+
+   ls /dev/video*
+
+would'nt create an output.
+
+:code:`v4l2-ctl` is an additional tool to handle video devices and gather information. It is not native however, and must be installed first:
+
+.. code-block:: console
+
+   sudo apt update && sudo apt install v4l-utils -y
+
+To use v42l-ctl to list available video devices
+
+.. code-block:: console
+
+   v4l2-ctl --list-devices
+
+or to read /dev/video0 specifications:
+
+.. code-block:: console
+
+   v4l2-ctl --list-formats-ext
+
+Here it shows the supported video formats (MJPEG should be one of them, as we use it in the node / launch file below). It also list the possible resolution (eg. :code:`Size Discrete 1280x720` them 1280 and 720 for witdh and height, or rather as seen below the resolution is selected index based, in that example discrete_size = 1, would choose the first resolution in that list) and corresponding fps that are possible with those resolutions. Those settings must be then made in the mjpeg_cam_node when defining the camera device, because when the camera is "opened" for the first time with those settings, the camera then sends image data with those settings respectively.
+
+/hardware/launch/bluerov.launch.py
+**********************************
+
+**By the way**: this file also starts the PWM for the front camera servo and spotlight LED.
+
+.. code-block:: sh
+
+   def add_jpeg_camera_node():
+      action = Node(
+         executable='mjpeg_cam_node',
+         package='mjpeg_cam',
+         name='front_camera',
+         namespace='front_camera',
+         parameters=[
+               {
+                  'device_id': 0,
+                  'discrete_size': 1,
+                  'fps': 30,
+                  'publish_nth_frame': 3,
+               },
+         ],
+      )
+      return action
+
+
+/hardware/launch/bluerob_buddy.launch.py
+****************************************
+
+.. code-block:: sh
+
+   def include_vertical_camera_node():
+      source = launch_file_source('mjpeg_cam', 'ov9281.launch.py')
+      args = LaunchArgsDict()
+      args.add_vehicle_name_and_sim_time()
+      args['camera_name'] = 'vertical_camera'
+      return IncludeLaunchDescription(source, launch_arguments=args.items())
+
+The :code:`ov9281.launch.py` then starts the mjep_cam_node as for the front camera. Here the camera data (device_id, discrete_size, fps, publish_nth_frame) is not provided directly, but through a confi file :code:`ov9281.yaml` which also declares the camera as :code:`device_id=0`.
+
+**ov9281** is the name of the camera that is build in the robot.
+
+
+mjpeg_cam package 
+*****************
+Everything is started from the laucnh file :code:`ov9281.lkaunch.py`. They are only called from within the :code:`hardware` package in :code:`hippo.launch.py` and :code:`bluerov.launch.py`. And in :code:`bluerov_buddy.launch.py` the :code:`mjpeg_cam_node` is executed directly.
+
+This package defines the interface betweem the camera hardware and processing of image data on software side. All of this is defined in the class MjpegCam. In the header :code:`mjepeg_cam.hpp` a method DeviceName() returns a string of the pi device the camera is using:
+
+.. code-block:: sh
+
+   std::string DeviceName() {
+    return "/dev/video" + std::to_string(params_.device_id);
+   }
+
+The initialization is in :code:`mjepeg_cam.cpp`. It calls the constructur of teh Device class that initializes a camera device like :code:`/dev/video0`, the resolution (width and height) and the frames per seconds (fps).
+
+.. code-block:: sh
+
+   camera_ = std::make_shared<Device>(DeviceName(), frame_size.first,
+                                     frame_size.second, params_.fps);
+
+The core of the camera interface, responsible for opening, configuring, capturing, and controlling a USB camera using the V4L2 (Video4Linux2) API lies in :code:`device.cpp`. This file is implementing the :code:`Device` class, which interacts with a USB camera via the V4L2 interface. 
 
 
 External Sensors 
@@ -547,13 +748,50 @@ Main Overview
 The barometer, Pixhawk 6c (FCU with Px4), teensy are all connected to the main. With the hardare setup they should be running by themself by just connecting those to the correct pins. Just make sure the pins are configured right (eq. UART).
 
 
+Cooling Fan 
+===========
+
+We have two wire cooling fans (+ and - wire). We can either directly connect them to 5V and GND on teh pin board, but then they would run all the time, or control them with respect to CPU tempertaure.
+
+For that change the tree:
+
+.. code-block:: console
+
+   sudo nano /boot/firmware/config.txt
+
+Add the line to the section [all]:
+
+.. code-block:: sh
+
+   dtoverlay=gpio-fan,gpiopin=18,temp=55000
+
+Any GPIO pin is possible, but GPIO18, GPIO17, GPIO22, GPIO27 are suited best. Select a desired CPU temperature, at which the pin goes high (3.3V) (55000 is 55°C). A PGIO pin does not provide enough power to power the fan. Thus use a npn-trasnistor as switch. Use the same circuit as shown `here <https://raspberrypi.stackexchange.com/questions/130583/is-it-possible-to-control-the-fan-from-gpio>`_
+
 TO-DO
 =====
 
+
 Visualization laucnh to start the april tag localization, was brauche ich dafür 
 
- and barmoter data for processing the USB data, wie 
 
- Ich will gucken, wie die Sachen connected sind, ob ich noch raspberry pi einstellungen machen muss und wie ich die Daten zu den nodes bekomme, ob ich da wie bei PWM einfach nur eine library brauche, die das für mich macht, oder ob ich wie beim reach alpha arm eine serial connection mit serial(/dev/fcu_debug) oder so herstellen muss. Oder ob irgendwas anderes an einstellungen noch nötig ist???
+ qualisys setup and what else I might require to read mocap data (is mocap data just odometry data of the frames it detects or also camera data and the qualisys bridge is handling that?)
 
- chnage, that i dont always have to type in sudo password 
+ SOS Leack Sensor Installation BlueRobotics 
+ -> QGroundControl brauche ich wohl dafür, von Nathalie zeigen lassen!!!
+
+
+Wie Latex mit svg einbinden direkt, Nathalie zeigen lassen, was sie da an tricks hatte 
+
+Malte 3d Druck schnalle für Alpha Arm 
+
+Bohrung am Bluerov freihand und dann einfach Muttern reingedrückt? 
+
+qualisys bridge angucken, was geht rein, was geht raus, brauche ich einen ros treiber (was ist ein ros treiber) was sind netzwerk voraussetzungen?
+
+
+ASC Anmelden Segelschein 
+
+pgiio ersatz, wenn man raspberry pi 5 nutzt. Man könnte/ müsste dann die vorgesehenen hardware PWM nodes nutzen:
+https://pypi.org/project/rpi-hardware-pwm/
+
+ Epoxy adapter selber machen BlueRobotics 

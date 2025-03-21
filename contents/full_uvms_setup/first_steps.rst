@@ -36,6 +36,15 @@ Change Fontsize permanentely:
 - Ctrl + O, Enter, Ctrl + X (to save the file)
 - sudo setupcon ( to apply changes)
 
+
+Deactivate password for sudo for user pi
+****************************************
+sudo nano /etc/sudoers
+
+add line to the end: pi ALL=(ALL:ALL) NOPASSWD:ALL
+
+save and sudo reboot
+
 Tackling SSH:
 *************
 - sudo nano /etc/hostname
@@ -56,6 +65,22 @@ Change username afterwards by creating a temporary user first:
 - su - tempuser (switch to new user)
 - sudo usermod -l pi -d /home/pi -m vincent.lenz (to change from old=vincent.lenz to new=pi. It changes the username and home directory)
 - sudo groupmod -n pi vincent.lenz (Rename the primary group from vincent.lenz to pi)
+
+
+Create ssh key on your machine, if not already existing:
+
+ssh-keygen -t rsa -b 4096 -C "your-email@example.com"
+
+hit enter (selecting the default) when asked where to save the key.
+If a prompt appears that this file already exist, you already have a ssh key and we advise you to not ovveride the file! Hit "n" and jump to "how to copy the key to the pi".
+If you are not confronted with that prompt, you dont have a ssh key yet, so hit enter for every follwing prompt, always selecting the default, then go to how to copy to pi.
+
+If it promt
+
+Copy that key to the pi (your computer and pi must be in the same local network):
+ssh-copy-id pi@<raspberry_pi_ip>
+here:
+ssh-copy-id pi@bluerov-02.local
 
 
 
