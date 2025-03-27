@@ -56,6 +56,7 @@ Welcome to HippoCampusDocs's documentation!
 
    contents/full_uvms_setup/first_steps
    contents/full_uvms_setup/comments
+   contents/full_uvms_setup/short
 
 .. toctree:: 
    :maxdepth: 1

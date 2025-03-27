@@ -789,6 +789,11 @@ Bohrung am Bluerov freihand und dann einfach Muttern reingedrückt?
 qualisys bridge angucken, was geht rein, was geht raus, brauche ich einen ros treiber (was ist ein ros treiber) was sind netzwerk voraussetzungen?
 
 
+
+
+
+
+
 ASC Anmelden Segelschein 
 
 pgiio ersatz, wenn man raspberry pi 5 nutzt. Man könnte/ müsste dann die vorgesehenen hardware PWM nodes nutzen:
