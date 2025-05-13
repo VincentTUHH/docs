@@ -993,6 +993,29 @@ And to build using our defined alias:
 
 Note that you do not have to be inside the respective workspace directory to build by executing the defined alias. Very convenient!
 
+.. note::
+
+   In case the raspberry pi freezes during the build process it is likely due to limited RAM space. In our setup building the overlay workspace :code:`ros2`failed. The follwoing fixes helped building this workspace.
+
+   First: cahnge the build_ros alias in .zshrc.
+   From 
+   .. code:: sh
+
+      alias build_ros="env -i HOME=$HOME USER=$USER TERM=xterm-256color bash -l -c 'source $HOME/ros2_underlay/install/setup.bash && cd $HOME/ros2 && colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON'"
+
+   To this
+   .. code:: sh
+
+      alias build_ros="env -i HOME=$HOME USER=$USER TERM=xterm-256color bash -l -c 'source $HOME/ros2_underlay/install/setup.bash && cd $HOME/ros2 && colcon build --symlink-install --executor sequential --parallel-workers 1 --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCATKIN_ENABLE_TESTING=OFF -DBUILD_TESTING=OFF'"
+
+   Add :code:`swap` - virtual memory - as an overflow area, that is used when the physical RAM (about 4GB) is full. Follwo this guide and do not forget to :code:`sudo reboot` in the end to apply the changes.
+
+   To see RAM and swap usage type in the terminal shell:
+   .. code:: console
+
+      watch -n1 free -h
+
+
 Add sourcing the ROS installation in your :code:`.zshrc`. Execute in your terminal:
 
 .. code:: console
