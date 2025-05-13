@@ -1013,7 +1013,7 @@ Note that you do not have to be inside the respective workspace directory to bui
    To see RAM and swap usage type in the terminal shell:
    .. code:: console
 
-      watch -n1 free -h
+      $ watch -n1 free -h
 
 
 Add sourcing the ROS installation in your :code:`.zshrc`. Execute in your terminal:
@@ -1340,6 +1340,11 @@ And to continuously see the logging of the sos_leak nodes run:
 .. code-block:: console
 
    $ journalctl -u leak_system.service -f
+
+Once water is detected, the UVMS will disarm itself and a high pitched buzzer sound can be heard from the button's display. To turn the alarm off make this service call
+.. code:: console
+
+   $ ros2 service call /klopsi00/stop_alarm std_srvs/srv/Empty
 
 
 
