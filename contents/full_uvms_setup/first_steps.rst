@@ -144,27 +144,27 @@ pinout
 The raspberry Pi 5 has a 40-pin GPIO header mapping out how the pins are assigned to different functionalities.
 cross-reference between the contacts, or pins, of an electrical connector or electronic component, and their functions
 **bluerov-02-main**
-- power pins
- - 5V (Pins 2, 4): Direct power supply, useful for powering external devices.
- - 3.3V (Pins 1, 17): Regulated 3.3V output.
- - Ground (GND) (Pins 6, 9, 14, 20, 25, 30, 34, 39): Common ground connections.
-- GPIO Pins (General Purpose Input/Output)
- - Can be programmed as inputs or outputs.
- - Some are assigned to specific functions, like UART, I2C, SPI, or PWM.
-- UART (Universal Asynchronous Receiver/Transmitter)
- - Used for serial communication.
- - GPIO 14 (TX0) (Pin 8) and GPIO 15 (RX0) (Pin 10) are the default serial interface.
- - GPIO 0 (TX2) (Pin 27) and GPIO 1 (RX2) (Pin 28) for Teensy.
- - GPIO 8 (TX4) (Pin 24) and GPIO 9 (RX4) (Pin 21) for FCU Debug.
- - GPIO 12 (TX5) (Pin 32) and GPIO 13 (RX5) (Pin 33) for FCU Telemetry (TL2).
-- I2C (Inter-Integrated Circuit):
- - Used for communicating with sensors (e.g., barometer).
- - GPIO 2 (SDA) (Pin 3) and GPIO 3 (SCL) (Pin 5).
-- SPI (Serial Peripheral Interface)
- - Not used in this setup but available on specific GPIOs.
-- PWM (Pulse Width Modulation):
- - GPIO 20 (Pin 38) for PWM Camera Servo.
- - GPIO 21 (Pin 40) for PWM Lights.
+.. - power pins
+..    - 5V (Pins 2, 4): Direct power supply, useful for powering external devices.
+..    - 3.3V (Pins 1, 17): Regulated 3.3V output.
+..    - Ground (GND) (Pins 6, 9, 14, 20, 25, 30, 34, 39): Common ground connections.
+.. - GPIO Pins (General Purpose Input/Output)
+..    - Can be programmed as inputs or outputs.
+..    - Some are assigned to specific functions, like UART, I2C, SPI, or PWM.
+.. - UART (Universal Asynchronous Receiver/Transmitter)
+..    - Used for serial communication.
+..    - GPIO 14 (TX0) (Pin 8) and GPIO 15 (RX0) (Pin 10) are the default serial interface.
+..    - GPIO 0 (TX2) (Pin 27) and GPIO 1 (RX2) (Pin 28) for Teensy.
+..    - GPIO 8 (TX4) (Pin 24) and GPIO 9 (RX4) (Pin 21) for FCU Debug.
+..    - GPIO 12 (TX5) (Pin 32) and GPIO 13 (RX5) (Pin 33) for FCU Telemetry (TL2).
+.. - I2C (Inter-Integrated Circuit):
+..    - Used for communicating with sensors (e.g., barometer).
+..    - GPIO 2 (SDA) (Pin 3) and GPIO 3 (SCL) (Pin 5).
+.. - SPI (Serial Peripheral Interface)
+..    - Not used in this setup but available on specific GPIOs.
+.. - PWM (Pulse Width Modulation):
+..    - GPIO 20 (Pin 38) for PWM Camera Servo.
+..    - GPIO 21 (Pin 40) for PWM Lights.
 
 By default, the Raspberry Pi uses UART0 (GPIO 14 & 15) for the console/login shell.
 I2C (For Sensors Like the Barometer). Needs to be enabled via: sudo raspi-config. Go to Interfacing Options > I2C and enable it.

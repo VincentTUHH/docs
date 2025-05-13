@@ -40,12 +40,14 @@ Modify Cloud-Init
 
 Modify :code:`user-data` on the `system-boot` partition to your liking. The SD card must be inserted into your computer. For MacOS users you access the partion from terminal:
 
-.. code-block::
+.. code-block:: console
 
-   cd /Volumes/system-boot && \
+   $ cd /Volumes/system-boot && \
    sudo nano user-data
 
-An example configuration is provided below. Things you should alter:
+You might be asked for a password, since we use :code:`sudo`. The password of your computer is meant here.
+
+Delete the existing content of that file and replace it with our example configuration below. Things you should alter:
 - *hostname* and *name*: Keep :code:`name: pi`. Relevant for deploying a ssh connection: :code:`ssh name@hostname.local`
 - *password*: Is later used to login onto the pi
 - *ssh_authorized_keys*: If you already have an ssh key paste it here, otherwise wait for the steps below. Delete the existing ssh keys, if you don't know to whom they belong to
@@ -109,7 +111,7 @@ Deactivate Password for :code:`sudo` for root User
 
 .. code-block:: console
 
-   sudo nano /etc/sudoers
+   $ sudo nano /etc/sudoers
 
 Add the following line to the end:
 
@@ -121,13 +123,13 @@ Rebbot to apply the changes:
 
 .. code-block:: console
 
-   sudo reboot
+   $ sudo reboot
 
 Now follow the steps:
 
 .. code-block:: console
 
-   sudo apt update && sudo apt upgrade -y && \
+   $ sudo apt update && sudo apt upgrade -y && \
    sudo apt install net-tools
 
 Change Keyboard Layout 
@@ -135,21 +137,21 @@ Change Keyboard Layout
 
 .. code-block:: console
 
-   sudo apt-get install console-data && \
+   $ sudo apt-get install console-data && \
    sudo dpkg-reconfigure keyboard-configuration
 
 According to your keyboard select for instance :code:`Fujitsu`, :code:`German`, :code:`AltGr` and apply changes:
 
 .. code-block:: console
 
-   sudo reboot
+   $ sudo reboot
 
 Change Font Size permanentely 
 *****************************
 
 .. code-block:: console
 
-   sudo nano /etc/default/console-setup
+   $ sudo nano /etc/default/console-setup
 
 Change the follwoing line and save the file:
 
@@ -161,7 +163,7 @@ You need to apply the changes:
 
 .. code-block:: console
 
-   sudo setupcon
+   $ sudo setupcon
 
 Change Name of Pi
 *****************
@@ -172,13 +174,13 @@ Change Name of Pi
 
 .. code-block:: console
 
-   sudo nano /etc/hostname
+   $ sudo nano /etc/hostname
 
 and change the hostname to :code:`bluerov-02-main`
 
 .. code-block:: console
 
-   sudo nano /etc/hosts
+   $ sudo nano /etc/hosts
 
 and change the name after IP address to :code:`bluerov-02-main`. :code:`reboot` your system.
 
@@ -186,7 +188,7 @@ In addition do that, to avoid needing a static IP:
 
 .. code-block:: console
 
-   sudo apt install avahi-daemon -y && \
+   $ sudo apt install avahi-daemon -y && \
    sudo systemctl enable avahi-daemon && \
    sudo systemctl start avahi-daemon
 
@@ -194,23 +196,23 @@ To adapt the username you first have to create a temporary user:
 
 .. code-block:: console
 
-   sudo adduser tempuser
+   $ sudo adduser tempuser
 
 Set a password and press :code:`Enter` to select all default settings.
 
 .. code-block:: console
 
-   sudo usermod -aG sudo tempuser
+   $ sudo usermod -aG sudo tempuser
 
 Now switch to the new user from where you can change the username to *pi*. You need to adapt :code:`old_user` accordingly to your system.
 
 .. code-block:: console
 
-   su - tempuser
+   $ su - tempuser
 
 .. code-block:: console
 
-   sudo usermod -l pi -d /home/pi -m old_user
+   $ sudo usermod -l pi -d /home/pi -m old_user
 
 
 You can now reach the pi via SSH by *ssh username@hostname.local*, so in this case *ssh pi@bluerov-02-main.local*. When you first add your SSH key, you don't have to enter a password to verify yourself.
@@ -224,7 +226,7 @@ Create a SSH-key on your own computer. Open a terminal and type the following. D
 
 .. code-block:: console
 
-   ssh-keygen -t rsa -b 4096 -C "your-email@example.com"
+   $ ssh-keygen -t rsa -b 4096 -C "your-email@example.com"
 
 You are prompted among other things to select a file location. Always press :code:`Enter` to select the default.
 
@@ -236,7 +238,7 @@ Now you need to copy your SSH key to the pi. Both, your computer and the pi must
 
 .. code-block:: console
 
-   ssh-copy-id pi@bluerov-02.local
+   $ ssh-copy-id pi@bluerov-02.local
 
 
 
@@ -312,13 +314,15 @@ To-Do: Bild davon wie herum man die Pinbelegung verstehen muss.
 
    .. tab:: BlueROV (main)
 
-      .. image:: /res/images/pi_pinout_bluerov.svg
+      .. image:: /res/images/pi_pinout_main.svg
          :width: 30000
          :align: center
 
    .. tab:: BlueROV (buddy)
 
-      .. todo:: Create the pinout.
+      .. image:: /res/images/pi_pinout_buddy.svg
+         :width: 30000
+         :align: center
 
 
 
@@ -331,7 +335,7 @@ Open the :code:`config.txt` file:
 
 .. code-block:: console
 
-   sudo nano /boot/firmware/config.txt
+   $ sudo nano /boot/firmware/config.txt
 
 Comment out :code:`dtparam=spi=on` and add the lines below an :code:`[all]`: section:
 
@@ -341,26 +345,23 @@ Comment out :code:`dtparam=spi=on` and add the lines below an :code:`[all]`: sec
 
 .. tabs::
 
-   .. code-tab:: console main
-
-      dtoverlay=i2c4,pins_6_7
-
-      dtoverlay=uart2
-      dtoverlay=uart3
-      dtoverlay=uart4
-      dtoverlay=uart5
+   .. code-tab:: sh main
 
       dtoverlay=gpio-led,gpio=11,label=led11-heartbeat,trigger=heartbeat
-
+      
       dtoverlay=pwm,pin=20,func=4
       dtoverlay=pwm,pin=21,func=4
 
-      TO-DO correct the pins ans uart that I actually use!!!!!
-      AND inform the reader about the pinout that is relevnt here
+      dtoverlay=uart2
+      dtoverlay=uart4
+      dtoverlay=uart5
 
-   .. code-tab:: console buddy
+      dtoverlay=i2c4,pins_2_3
+
+   .. code-tab:: sh buddy
       
-      To-Do !!!!!!!!!!!!!!!!!   
+      dtoverlay=gpio-led,gpio=11,label=led11-heartbeat,trigger=heartbeat
+        
 
 Save and apply changes with :code:`reboot`.
 
@@ -410,7 +411,7 @@ The *udev* system dynamically manages device nodes in Linux. By default, it appl
 
 .. code-block:: console
 
-   sudo nano /etc/udev/rules.d/99-serial.rules
+   $ sudo nano /etc/udev/rules.d/99-serial.rules
 
 .. tabs::
 
@@ -429,24 +430,24 @@ The *udev* system dynamically manages device nodes in Linux. By default, it appl
 
       For instance the teensy is now callable with :code:`/dev/teensy_data`.
 
-   .. code-tab:: sh buddy
+   .. tab:: buddy
       
-      To-Do !!!!!!!!!!!!!!!!!   
+      n/a 
 
 To-D0: what about these other udev rules that are on the main for hindering that something mistakens the teensy or so for a modem or so...
 
 Save and apply new rules:
 
 .. code-block:: console
-
-   sudo udevadm control --reload-rules && \
+   
+   $ sudo udevadm control --reload-rules && \
    sudo udevadm trigger
 
 You should see the new device names when testing:
 
 .. code-block:: console
 
-   ls /dev/* -l
+   $ ls /dev/* -l
 
 
 USB Configuration and UDEV Rules 
@@ -536,14 +537,29 @@ Ethernet
 Most likely the Gigabit connection via our manually crimped RJ45 connectors is not stable. Hence, the connection speed (100 Mbit/s vs Gbit) is repetitively negotiated which results in an unstable connection. We try to avoid this by manually setting the advertised link mode to 100 MBit/s.
 
 .. code-block:: console
-
-   sudo nano /etc/network/if-pre-up.d/eththool
+   
+   $ sudo nano /etc/network/if-pre-up.d/ethtool
 
 Add the line :code:`$ETHTOOL --change eth0 advertise 0x008` to look like:
 
 .. code-block:: sh
 
-   TO-DO Wie sieht dieses File denn nun aus?!?!?!?!?
+   #!/bin/sh
+
+   ETHTOOL=/usr/sbin/ethtool
+
+   test -x $ETHTOOL || exit 0
+
+   [ "$IFACE" != "lo" ] || exit 0
+
+   # Gather together the mixed bag of settings applied with -s/--change
+   SETTINGS="\
+   ${IF_ETHERNET_PORT:+ port $IF_ETHERNET_PORT}\
+   ${IF_DRIVER_MESSAGE_LEVEL:+ msglvl $IF_DRIVER_MESSAGE_LEVEL}\
+   "
+   [ -z "$SETTINGS" ] || $ETHTOOL --change "$IFACE" $SETTINGS
+
+   $ETHTOOL --change eth0 advertise 0x008
 
 
 
@@ -568,12 +584,12 @@ Automated Restart Settings
 Open :code:`needrestart.conf`:
 
 .. code-block:: console
-
-   sudo nano /etc/needrestart/needrestart.conf
+   
+   $ sudo nano /etc/needrestart/needrestart.conf
 
 We want to change those settings to automatically restart services after package upgrades and detect neccessyra rebbots de to kernal upgrades. Find the following commands in the file, uncomment and modify the value accordingly to match:
 
-.. code-block::sh
+.. code-block:: sh
 
    $nrconf{restart} = 'a';
    $nrconf{kernelhints} = 0;
@@ -588,11 +604,6 @@ We want to change those settings to automatically restart services after package
 
 ROS Installation 
 ================
-
-.. _ros-installation:
-
-ROS Installation
-################
 
 .. attention::
    We are moving to ROS2. This guide and the following pages are still in the process of being updated. There might be some construction works still going on here and there.
@@ -655,8 +666,8 @@ Use the more lightweight installation for Raspberry Pis.
 #. Install ROS
 
    .. code-block:: console
-
-      sudo apt install ros-jazzy-perception
+      
+      $ sudo apt install ros-jazzy-perception
 
 #. Install development tools
 
@@ -814,7 +825,7 @@ Installation
 
 On Raspberry Pis (deployed with the Ubuntu server image), the ``hippo_robot`` package without graphical dependencies is what we are going for
 
-.. code-tab:: console
+.. code-block:: console
 
    $ sudo apt install ros-${ROS_DISTRO}-hippo-robot
 
@@ -867,16 +878,13 @@ The **underlay** contains core packages that provide essential functionality for
 The **overlay** is where your current project lives. It includes the packages you are actively developing and updating. This workspace is built on top of the underlay and depends on it.
 
 .. code-block:: console
-
-   mkdir -p ~/ros2/src &&  \
+   
+   $ mkdir -p ~/ros2/src &&  \
    mkdir -p ~/ros2_underlay/src
 
 
-Getting the external packages
------------------------------
-
-AprilTag-ROS
-************
+AprilTag-ROS - external packages
+********************************
 
 We currently use a slightly adapted version of the ROS2 port of the :code:`apriltag_ros` package by `Christian Rauch <https://github.com/christianrauch/apriltag_ros>`__.
 
@@ -898,7 +906,7 @@ Download our version:
 
 
 Building the Workspaces
------------------------
+***********************
 
 With :code:`colcon`, the new build tool for ROS2, you cannot build your custom workspace when it is sourced.
 This would mean that you either cannot source your workspace in :file:`.zshrc`, or you have to manually make sure to run the build command in an environment where you only source workspaces outside the workspace you want to build. 
@@ -906,31 +914,31 @@ This would mean that you either cannot source your workspace in :file:`.zshrc`, 
 Since this is very tedious, we define some aliases. Add these lines into your :file:`.zshrc` by executing the following in the terminal:
 
 .. code:: console
-
-   echo "alias build_ros=\"env -i HOME=\$HOME USER=\$USER TERM=xterm-256color bash -l -c 'source \$HOME/ros2_underlay/install/setup.bash && cd \$HOME/ros2 && colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON'\"" >> ~/.zshrc
+   
+   $ echo "alias build_ros=\"env -i HOME=\$HOME USER=\$USER TERM=xterm-256color bash -l -c 'source \$HOME/ros2_underlay/install/setup.bash && cd \$HOME/ros2 && colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON'\"" >> ~/.zshrc && \
    source ~/.zshrc
-   echo "alias build_underlay=\"env -i HOME=\$HOME USER=\$USER TERM=xterm-256color bash -l -c 'source /opt/ros/jazzy/setup.bash && cd \$HOME/ros2_underlay && colcon build'\"" >> ~/.zshrc
+   $ echo "alias build_underlay=\"env -i HOME=\$HOME USER=\$USER TERM=xterm-256color bash -l -c 'source /opt/ros/jazzy/setup.bash && cd \$HOME/ros2_underlay && colcon build'\"" >> ~/.zshrc && \
    source ~/.zshrc
-   echo "alias rosdep-ros2=\"env -i HOME=$HOME USER=$USER TERM=xterm-256color bash -l -c 'source $HOME/ros2_underlay/install/setup.bash && cd $HOME/ros2 && rosdep install --from-paths src -y --ignore-src'\"" >> ~/.zshrc
+   $ echo "alias rosdep-ros2=\"env -i HOME=$HOME USER=$USER TERM=xterm-256color bash -l -c 'source $HOME/ros2_underlay/install/setup.bash && cd $HOME/ros2 && rosdep install --from-paths src -y --ignore-src'\"" >> ~/.zshrc && \
    source ~/.zshrc
-   echo "alias rosdep-underlay=\"env -i HOME=$HOME USER=$USER TERM=xterm-256color bash -l -c 'source /opt/ros/jazzy/setup.bash && cd $HOME/ros2_underlay && rosdep install --from-paths src -y --ignore-src'\"" >> ~/.zshrc
+   $ echo "alias rosdep-underlay=\"env -i HOME=$HOME USER=$USER TERM=xterm-256color bash -l -c 'source /opt/ros/jazzy/setup.bash && cd $HOME/ros2_underlay && rosdep install --from-paths src -y --ignore-src'\"" >> ~/.zshrc && \
    source ~/.zshrc
 
 .. note::
 
-   :code:`echo <content> >> ~/.zshrc` adds the *content* to the end of the file that is at *~/.zshrc*.
+   :code:`echo "content" >> ~/.zshrc` adds the *content* to the end of the file that is at *~/.zshrc*.
 
 .. important::
 
    Make sure to source the :file:`.zshrc` in your terminal - as we do right now - each time you make changes to it
 
-   .. code-block::
+   .. code-block:: console
       
-      source ~/.zshrc
+      $ source ~/.zshrc
 
 
 Underlay Workspace
-******************
+------------------
 
 .. attention::
    This is a (mostly) full list of our packages. If you installed the pre-built packages, you probably do not want to clone all these packages. (The ones installed via pre-build packages are comment out)
@@ -940,45 +948,47 @@ Underlay Workspace
    .. code-tab:: console ssh
 
       $ cd ~/ros2_underlay/src \
-      && git clone git@github.com:HippoCampusRobotics/state_estimation.git
+      && git clone git@github.com:HippoCampusRobotics/state_estimation.git \
+      && git clone git@github.com:VincentTUHH/sos_leak.git
 
-      # && git clone git@github.com:HippoCampusRobotics/hippo_sim.git \
-      # && git clone git@github.com:HippoCampusRobotics/hippo_gz_plugins.git \
-      # && git clone --recursive git@github.com:HippoCampusRobotics/hippo_common.git \
-      # && git clone --recursive git@github.com:HippoCampusRobotics/hippo_msgs.git \
-      # && git clone git@github.com:HippoCampusRobotics/hippo_control_msgs.git \
-      # && git clone --recursive git@github.com:HippoCampusRobotics/esc.git \
-      # && git clone git@github.com:HippoCampusRobotics/hippo_control.git \
-      # && git clone git@github.com:HippoCampusRobotics/visual_localization.git \
-      # && git clone git@github.com:HippoCampusRobotics/remote_control.git
+      && git clone git@github.com:HippoCampusRobotics/hippo_sim.git \
+      && git clone git@github.com:HippoCampusRobotics/hippo_gz_plugins.git \
+      && git clone --recursive git@github.com:HippoCampusRobotics/hippo_common.git \
+      && git clone --recursive git@github.com:HippoCampusRobotics/hippo_msgs.git \
+      && git clone git@github.com:HippoCampusRobotics/hippo_control_msgs.git \
+      && git clone --recursive git@github.com:HippoCampusRobotics/esc.git \
+      && git clone git@github.com:HippoCampusRobotics/hippo_control.git \
+      && git clone git@github.com:HippoCampusRobotics/visual_localization.git \
+      && git clone git@github.com:HippoCampusRobotics/remote_control.git
 
 
    .. code-tab:: console https
       
       $ cd ~/ros2/src \
-      && git clone https://github.com/HippoCampusRobotics/state_estimation.git
+      && git clone https://github.com/HippoCampusRobotics/state_estimation.git \
+      && git clone https://github.com/VincentTUHH/sos_leak.git
 
-      # && git clone --recursive https://github.com/HippoCampusRobotics/hippo_common.git \
-      # && git clone --recursive https://github.com/HippoCampusRobotics/hippo_msgs.git \
-      # && git clone https://github.com/HippoCampusRobotics/hippo_control_msgs.git \
-      # && git clone https://github.com/HippoCampusRobotics/hippo_sim.git \
-      # && git clone https://github.com/HippoCampusRobotics/hippo_gz_plugins.git \
-      # && git clone --recursive https://github.com/HippoCampusRobotics/esc.git \
-      # && git clone https://github.com/HippoCampusRobotics/hippo_control.git \
-      # && git clone https://github.com/HippoCampusRobotics/remote_control.git \
-      # && git clone https://github.com/HippoCampusRobotics/visual_localization.git && \
+      && git clone --recursive https://github.com/HippoCampusRobotics/hippo_common.git \
+      && git clone --recursive https://github.com/HippoCampusRobotics/hippo_msgs.git \
+      && git clone https://github.com/HippoCampusRobotics/hippo_control_msgs.git \
+      && git clone https://github.com/HippoCampusRobotics/hippo_sim.git \
+      && git clone https://github.com/HippoCampusRobotics/hippo_gz_plugins.git \
+      && git clone --recursive https://github.com/HippoCampusRobotics/esc.git \
+      && git clone https://github.com/HippoCampusRobotics/hippo_control.git \
+      && git clone https://github.com/HippoCampusRobotics/remote_control.git \
+      && git clone https://github.com/HippoCampusRobotics/visual_localization.git && \
 
 
 These packages have some more dependencies. Let's resolve them by executing
 
 .. code:: console
-
+   
    $ rosdep-underlay
 
 And to build using our defined alias:
 
 .. code:: console
-
+   
    $ build_underlay
 
 Note that you do not have to be inside the respective workspace directory to build by executing the defined alias. Very convenient!
@@ -999,7 +1009,7 @@ After a successful build, we can source this workspace in the :file:`.zshrc`, so
 
 
 Main / Overlay Workspace
-************************
+------------------------
 
 Packages for the uvms (BlueROV + Alpha Arm) are not yet provided as binaries. We have to build them from source and as we might need to work on them we add them to the overlayed workspace. Go to
 
@@ -1054,16 +1064,16 @@ Auto-Complete
    This might have changed for Ubuntu 24.04.
    Check and complete this todo!
 
-ROS2 command line tools do not autocomplete as of this `GitHub Issue <https://github.com/ros2/ros2cli/issues/534>`_. While this issue has since been closed, the problem still occurs. To fix this
+ROS2 command line tools do not autocomplete. To fix this
 
 .. code-block:: console
    
-   $ echo "eval \"\$(register-python-argcomplete ros2)\"" >> ~/.zshrc
-   $ echo "eval \"\$(register-python-argcomplete colcon)\"" >> ~/.zshrc
+   $ echo "eval \"\$(register-python-argcomplete ros2)\"" >> ~/.zshrc && \
+   source ~/.zshrc
+   $ echo "eval \"\$(register-python-argcomplete colcon)\"" >> ~/.zshrc && \
+   source ~/.zshrc
 
 Auto-completing topic names seems to work only after an execution of `ros2 topic list`. Before the auto-complete gets stuck and has to be canceled by :kbd:`Ctrl` + :kbd:`C`.
-
-Sourcing :file:`install/setup.zsh` might reset this. Better source :file:`install/local_setup.zsh`.
 
 
 Final Check
@@ -1128,13 +1138,185 @@ Your :file:`.zshrc` should look similar to this now:
 
 
 
+SOS Leak Sensor 
+===============
+
+SOS Leak Sensor is power by 3.3V or 5V source and draws at most 20mA. So it can be connected to the Raspberry Pi.
+
+The signal wire (yellow) is pulled to high (3.3V or 5V) when water is detected. At the same time a red LED lights up on the SOS board. Otherwise the signal is pulled to GND. This works on its own already.
+
+Safty Shutdwon Framwork
+***********************
+
+- ROS nodes running on both Pi's that read the signal pin and publish a boolean message to weather water is detected in either tube.
+- another ROS node subscribes to top and bottom tube topics and initiates a safe shutdown of the system 
+
+Settings 
+********
+
+The package has already been cloned to the :code:`ros2_underlay`workspace earlier.
+
+GPIO Access 
+-----------
+
+Ensure the user (pi) can access GPIO
+
+.. code-block:: console
+
+   $ groups
+   # Should include 'gpio'
+
+Create the gpio group manually
+
+.. code-block:: console
+
+   $ sudo groupadd gpio && \
+   sudo usermod -aG gpio pi
+
+Create an udev rule:
+
+.. code-block:: console 
+
+   $ sudo nano /etc/udev/rules.d/99-gpiomem.rules
+
+Paste:
+
+.. code-block:: sh 
+
+   KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
+
+Save the file. Then reload the rules and reboot:
+
+.. code-block:: console 
+
+   $ sudo udevadm control --reload-rules && \
+   sudo udevadm trigger && \
+   sudo reboot
+
+Test:
+
+.. code-block:: console
+
+   $ ls -l /dev/gpiomem
+   # you should see:
+   # crw-rw---- 1 root gpio ...
+
+And the user pi sould belong to the gpio group. gpio must show here:
+
+.. code-block:: console 
+
+   $ groups
+
+Dependencies 
+------------
+
+The code requires librarries that only run on raspberry pi hardware, in order to access the GPIO pins. Execute:
+
+.. code-block:: console
+
+   $ sudo apt-get update && \
+   sudo apt-get install python3-pip && \
+   sudo apt install python3-rpi.gpio
+
+Pi Shutdown from Script 
+-----------------------
+
+To initiate a shutdown of the pi from a script, we need passwordless :code:`sudo` use. When following this manual this should already be handled by the :code:`Cloud-Init` by this line:
+
+.. code-block:: sh
+
+   sudo: "ALL=(ALL) NOPASSWD:ALL"
 
 
+Auto-Start on Boot 
+------------------
 
+We want to write a service that automatically runs our safty feature.
 
+Create a new file:
 
+.. code-block:: console
 
+   $ sudo nano /etc/systemd/system/leak_system.service
 
+and paste in the following:
+
+.. tabs::
+
+   .. code-tab:: sh main
+
+      [Unit]
+      Description=ROS 2 Leak System Service (Main Tube)
+      After=network.target
+
+      [Service]
+      Environment=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      ExecStart=/usr/bin/bash -c 'source /home/pi/ros2_underlay/install/setup.bash && ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=main start_leak_server:=true'
+      WorkingDirectory=/home/pi/ros2_underlay
+      User=pi
+      Restart=always
+      RestartSec=5
+      StandardOutput=journal
+      StandardError=journal
+
+      [Install]
+      WantedBy=multi-user.target
+
+   .. code-tab:: sh buddy
+      
+      [Unit]
+      Description=ROS 2 Leak System Service (Buddy Tube)
+      After=network.target
+
+      [Service]
+      Environment=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      ExecStart=/usr/bin/bash -c 'source /home/pi/ros2_underlay/install/setup.bash && ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=buddy start_leak_server:=false'
+      WorkingDirectory=/home/pi/ros2_underlay
+      User=pi
+      Restart=always
+      RestartSec=5
+      StandardOutput=journal
+      StandardError=journal
+
+      [Install]
+      WantedBy=multi-user.target
+
+.. note::
+
+   :code:`ros2 launch sos_leak sos_leak_service.launch.py vehicle_name:=klopsi00 tube_name:=buddy start_leak_server:=false'` is the launch command otherwise executed in terminal.
+
+   **vehicle_name:=klopsi00** sets the namespace of the vehicle (however since the sos leak system is a self contained system its namespace can vary from the namespace of control nodes)
+
+   :code:`ExecStart=/usr/bin/bash -c 'source /home/pi/ros2_underlay/...` adapt the path / workspace where the sos_leak package lies.
+
+   :code:`WorkingDirectory=/home/pi/ros2_underlay` adapt the path / workspace where the sos_leak package lies.
+
+Then reload systemd and enable the service:
+
+.. code-block:: console
+
+   $ sudo systemctl daemon-reload && \
+   sudo systemctl enable leak_system.service
+
+You can start it immediatly with 
+
+.. code-block:: console
+
+   $ sudo systemctl start leak_system.service
+
+or just wait until you next boot the pi.
+
+Check that the service is running properly by checking:
+
+.. code-block:: console
+
+   $ sudo systemctl status leak_system.service
+
+And to continuously see the logging of the sos_leak nodes run:
+
+.. code-block:: console
+
+   $ journalctl -u leak_system.service -f
 
 
 

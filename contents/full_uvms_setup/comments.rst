@@ -311,6 +311,7 @@ The baud rate refers to the speed of serial communication, measured in bits per 
 Apart from the things I add (only those uart, that I also use), **must add it under the [all] section:
 
 .. code-block:: sh
+
    [all]
    ...
    dtoverlay=i2c4,pins_6_7
@@ -562,21 +563,21 @@ Since I am solely using this config.txt for this specific Pi 5, I can put everyt
 
 
 
-If the deamon were running:
+.. If the deamon were running:
 
-❯ sudo systemctl status pigpiod
-● pigpiod.service - Pigpio daemon
-     Loaded: loaded (/etc/systemd/system/pigpiod.service; enabled; vendor preset: enabled)
-     Active: active (running) since Mon 2025-03-17 12:06:18 CET; 5h 47min ago
-   Main PID: 683 (pigpiod)
-      Tasks: 4 (limit: 9244)
-     Memory: 772.0K
-        CPU: 26min 50.676s
-     CGroup: /system.slice/pigpiod.service
-             └─683 /usr/local/bin/pigpiod
+.. ❯ sudo systemctl status pigpiod
+.. ● pigpiod.service - Pigpio daemon
+..      Loaded: loaded (/etc/systemd/system/pigpiod.service; enabled; vendor preset: enabled)
+..      Active: active (running) since Mon 2025-03-17 12:06:18 CET; 5h 47min ago
+..    Main PID: 683 (pigpiod)
+..       Tasks: 4 (limit: 9244)
+..      Memory: 772.0K
+..         CPU: 26min 50.676s
+..      CGroup: /system.slice/pigpiod.service
+..              └─683 /usr/local/bin/pigpiod
 
-Mar 17 12:06:18 klopsi-main-00 systemd[1]: Starting Pigpio daemon...
-Mar 17 12:06:18 klopsi-main-00 systemd[1]: Started Pigpio daemon.
+.. Mar 17 12:06:18 klopsi-main-00 systemd[1]: Starting Pigpio daemon...
+.. Mar 17 12:06:18 klopsi-main-00 systemd[1]: Started Pigpio daemon.
 
 
 
