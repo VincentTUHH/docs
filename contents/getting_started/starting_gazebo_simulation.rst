@@ -17,7 +17,7 @@ To start Gazebo with one HippoCampus:
 
 .. code-block:: console
 
-   $ ros2 launch hippo_sim top_hippocampus_complete.launch vehicle_name:=uuv00 start_gui:=true
+   $ ros2 launch hippo_sim top_hippocampus_complete.launch.py vehicle_name:=uuv00 start_gui:=true
 
 As an example, we use :code:`uuv00` as the vehicle name. Per default, we do not open the Gazebo GUI but use RVIZ instead for visualization. If you want to see the Gazebo GUI, you need to set the respective launch argument to true: :code:`start_gui:=true`.
 
