@@ -58,6 +58,7 @@ Welcome to HippoCampusDocs's documentation!
    contents/hardware/bluerov
    contents/hardware/gantry
    contents/hardware/qualisys
+   contents/hardware/marker
    contents/hardware/cameras
    contents/hardware/buttons
    contents/hardware/RF_modules
